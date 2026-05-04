@@ -1,0 +1,2559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TimeTV - Watch All Channels</title>
+    <meta
+      name="description"
+      content="Watch live TV channels from around the world"
+    />
+    <meta name="theme-color" content="#2563eb" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M21 6h-7.59l3.29-3.29L16 2l-4 4H9c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H9V8h12v10zM7 4H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E" />
+    
+    <!-- Meta for PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TimeTV" />
+    <meta name="application-name" content="TimeTV" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-config" content="none" />
+
+    <!-- PWA Manifest -->
+    <link
+      rel="manifest"
+      href='data:application/manifest+json,{
+  "name": "TimeTV",
+  "short_name": "TimeTV",
+  "description": "Watch live TV channels with intelligent features",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [{
+    "src": "data:image/svg+xml,%3Csvg xmlns=&apos;http://www.w3.org/2000/svg&apos; viewBox=&apos;0 0 24 24&apos; fill=&apos;%232563eb&apos;%3E%3Cpath d=&apos;M21 6h-7.59l3.29-3.29L16 2l-4 4H9c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H9V8h12v10zM7 4H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z&apos;/%3E%3C/svg%3E",
+    "sizes": "192x192",
+    "type": "image/svg+xml"
+  },{
+    "src": "data:image/svg+xml,%3Csvg xmlns=&apos;http://www.w3.org/2000/svg&apos; viewBox=&apos;0 0 24 24&apos; fill=&apos;%232563eb&apos;%3E%3Cpath d=&apos;M21 6h-7.59l3.29-3.29L16 2l-4 4H9c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H9V8h12v10zM7 4H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z&apos;/%3E%3C/svg%3E",
+    "sizes": "512x512",
+    "type": "image/svg+xml"
+  }],
+  "categories": ["entertainment", "multimedia", "tv"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}'
+    />
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('data:text/javascript,const CACHE_NAME = "timetv-v1"; const urlsToCache = ["./"]; self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))); }); self.addEventListener("fetch", event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))); });')
+            .then(registration => console.log('SW registered'))
+            .catch(error => console.log('SW registration failed'));
+        });
+      }
+    </script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 0;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        color: #2563eb;
+        font-size: 3rem;
+        margin-bottom: 15px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 1.3rem;
+        font-weight: 500;
+      }
+
+      .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .content-area {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 30px;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+
+      .category-btn {
+        padding: 12px 24px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .category-btn:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.2);
+      }
+
+      .category-btn.active {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        border-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+      }
+
+      .search-container {
+        margin-bottom: 30px;
+        text-align: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+
+      .search-input {
+        width: 100%;
+        max-width: 500px;
+        padding: 16px 24px;
+        border: 2px solid #e5e7eb;
+        border-radius: 30px;
+        font-size: 16px;
+        outline: none;
+        transition: all 0.3s;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.2);
+      }
+
+      .video-container {
+        margin-bottom: 30px;
+        text-align: center;
+        padding: 30px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .video-player {
+        width: 100%;
+        max-width: 900px;
+        height: 500px;
+        background: #000;
+        border-radius: 15px;
+        margin: 0 auto;
+        display: block;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .video-player:hover::after {
+        content: "📺 Click for Live Programs";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(37, 99, 235, 0.95);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: bold;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+        backdrop-filter: blur(10px);
+      }
+
+      .video-player:hover::after {
+        opacity: 1;
+      }
+
+      .channel-info {
+        margin-top: 20px;
+        padding: 20px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+      }
+
+      .channel-name {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 8px;
+      }
+
+      .channel-details {
+        color: #666;
+        font-size: 1rem;
+      }
+
+      .channels-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+      }
+
+      .channel-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #e5e7eb;
+        border-radius: 15px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        position: relative;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .channel-card:hover {
+        border-color: #2563eb;
+        box-shadow: 0 8px 32px rgba(37, 99, 235, 0.2);
+        transform: translateY(-5px);
+      }
+
+      .channel-card.playing {
+        border-color: #dc2626;
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2);
+      }
+
+      .channel-logo {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: #666;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .channel-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+
+      .channel-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+      }
+
+      .channel-category {
+        color: #666;
+        font-size: 0.9rem;
+        background: #f3f4f6;
+        padding: 4px 12px;
+        border-radius: 15px;
+        display: inline-block;
+        font-weight: 500;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .error {
+        text-align: center;
+        padding: 40px;
+        color: #dc2626;
+        background: #fef2f2;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      .control-btn {
+        padding: 8px 16px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .control-btn:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+      }
+
+      .control-btn:active {
+        background: #2563eb;
+        color: white;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 15px;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .channels-grid {
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 15px;
+        }
+
+        .video-player {
+          height: 250px;
+        }
+      }
+
+      .channel-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .channel-card.error {
+        border-color: #dc2626;
+        background: #fef2f2;
+      }
+
+      .status-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+
+      .status-indicator.loading {
+        background: #f59e0b;
+        animation: pulse 1s infinite;
+      }
+
+      .status-indicator.error {
+        background: #dc2626;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .video-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+
+      .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .volume-slider {
+        width: 80px;
+        height: 4px;
+        background: #ddd;
+        border-radius: 2px;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #2563eb;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .quality-info {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .smart-tv-controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 15px;
+        padding: 10px;
+        background: rgba(37, 99, 235, 0.1);
+        border-radius: 8px;
+        flex-wrap: wrap;
+      }
+
+      .smart-btn {
+        padding: 8px 12px;
+        border: 2px solid #2563eb;
+        background: white;
+        color: #2563eb;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .smart-btn:hover {
+        background: #2563eb;
+        color: white;
+      }
+
+      .smart-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .remote-panel {
+        display: none;
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        background: white;
+        border: 2px solid #2563eb;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 200px;
+      }
+
+      .remote-panel.active {
+        display: block;
+      }
+
+      .remote-title {
+        font-size: 12px;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      .remote-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .remote-btn {
+        padding: 10px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+        font-weight: bold;
+      }
+
+      .remote-btn:hover {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+      }
+
+      .remote-close {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .device-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 10px;
+      }
+
+      .device-item {
+        padding: 10px;
+        background: #f3f4f6;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+
+      .device-item:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+      }
+
+      .codec-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #dbeafe;
+        color: #1e40af;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-top: 3px;
+      }
+
+      .favorite-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 10;
+      }
+
+      .favorite-btn:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.1);
+      }
+
+      .favorite-btn.active {
+        color: #dc2626;
+      }
+
+      .favorites-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #fef3c7;
+        border-radius: 10px;
+        border: 2px solid #f59e0b;
+      }
+
+      .favorites-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #92400e;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .favorites-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+      }
+
+      .intelligent-mode {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: 2px solid #2563eb;
+        border-radius: 25px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 1000;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .intelligent-mode:hover {
+        background: #2563eb;
+        color: white;
+      }
+
+      .intelligent-mode.active {
+        background: #2563eb;
+        color: white;
+      }
+
+      .program-guide {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 400px;
+        height: calc(100vh - 100px);
+        background: white;
+        border: 2px solid #2563eb;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+        display: none;
+        overflow-y: auto;
+      }
+
+      .tv-screen-programs {
+        position: fixed;
+        top: 50%;
+        left: 20px;
+        transform: translateY(-50%);
+        width: 350px;
+        max-height: 70vh;
+        background: white;
+        border: 2px solid #2563eb;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 998;
+        display: none;
+        overflow-y: auto;
+      }
+
+      .tv-screen-programs.active {
+        display: block;
+      }
+
+      .tv-programs-header {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 15px;
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .close-tv-programs {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #666;
+        padding: 5px;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .close-tv-programs:hover {
+        background: #f3f4f6;
+        color: #333;
+      }
+
+      .program-guide.active {
+        display: block;
+      }
+
+      .program-guide-header {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 20px;
+        text-align: center;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .channel-programs {
+        margin-bottom: 25px;
+      }
+
+      .channel-programs-header {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .program-item {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-left: 4px solid #2563eb;
+      }
+
+      .program-item:hover {
+        background: #e3f2fd;
+        border-left-color: #1d4ed8;
+        transform: translateX(5px);
+      }
+
+      .program-time {
+        font-size: 0.9rem;
+        color: #2563eb;
+        font-weight: bold;
+        margin-bottom: 6px;
+      }
+
+      .program-title {
+        font-size: 1rem;
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 6px;
+        line-height: 1.3;
+      }
+
+      .program-description {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+
+      .program-channel {
+        font-size: 0.8rem;
+        color: #666;
+        background: #e5e7eb;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-block;
+      }
+
+      .program-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .program-action-btn {
+        padding: 6px 12px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+      }
+
+      .program-action-btn:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+      }
+
+      .program-action-btn.remind {
+        background: #10b981;
+      }
+
+      .program-action-btn.remind:hover {
+        background: #059669;
+      }
+
+      .program-action-btn.share {
+        background: #f59e0b;
+      }
+
+      .program-action-btn.share:hover {
+        background: #d97706;
+      }
+
+      .ai-loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .ai-loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .network-indicator {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #2563eb;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+
+      .network-indicator:hover {
+        background: #2563eb;
+        color: white;
+      }
+
+      .network-indicator.good {
+        border-color: #10b981;
+        color: #10b981;
+      }
+
+      .network-indicator.fair {
+        border-color: #f59e0b;
+        color: #f59e0b;
+      }
+
+      .network-indicator.poor {
+        border-color: #dc2626;
+        color: #dc2626;
+      }
+
+      .network-indicator.offline {
+        border-color: #6b7280;
+        color: #6b7280;
+      }
+
+      .low-data-toggle {
+        position: fixed;
+        top: 60px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #2563eb;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+
+      .low-data-toggle:hover {
+        background: #2563eb;
+        color: white;
+      }
+
+      .low-data-toggle.active {
+        background: #f59e0b;
+        border-color: #f59e0b;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Network Status Indicators -->
+      <div class="network-indicator" id="networkIndicator" onclick="NetworkManager.toggleLowDataMode()">
+        📶 Good
+      </div>
+      
+      <div class="low-data-toggle" id="lowDataToggle" onclick="NetworkManager.toggleLowDataMode()">
+        📊 Full Mode
+      </div>
+
+      <header class="header">
+        <h1>📺 TimeTV</h1>
+        <p>AI-Powered Live TV Channel Guide with Real-Time Programming</p>
+      </header>
+
+      <div class="main-layout">
+        <div class="content-area">
+          <div class="categories" id="categories">
+            <!-- Categories will be populated by JavaScript -->
+          </div>
+
+          <div class="search-container">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="🔍 Search channels..."
+            />
+          </div>
+
+          <div class="video-container" id="videoContainer" style="display: none">
+            <video class="video-player" id="videoPlayer" controls preload="none">
+              Your browser does not support the video tag.
+            </video>
+            <div class="channel-info" id="channelInfo">
+              <!-- Channel info will be shown here -->
+            </div>
+            <div class="video-controls">
+              <div class="volume-control">
+                <span id="volumeIcon">🔊</span>
+                <input
+                  type="range"
+                  class="volume-slider"
+                  id="volumeSlider"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
+              <div class="quality-info" id="qualityInfo">Loading...</div>
+            </div>
+            <div class="smart-tv-controls">
+              <button class="smart-btn" id="castBtn" title="Cast to Smart TV">
+                📡 Cast Device
+              </button>
+              <button class="smart-btn" id="remoteBtn" title="Show Remote Control">
+                🎮 Remote
+              </button>
+              <button class="smart-btn" id="codecBtn" title="Stream Info">
+                ℹ️ Stream Info
+              </button>
+            </div>
+            <div class="controls">
+              <button class="control-btn" id="prevBtn">⏮️ Previous</button>
+              <button class="control-btn" id="closeBtn">✕ Close Player</button>
+              <button class="control-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+              <button class="control-btn" id="nextBtn">⏭️ Next</button>
+            </div>
+          </div>
+
+          <!-- Remote Control Panel -->
+          <div class="remote-panel" id="remotePanel">
+            <button class="remote-close" onclick="toggleRemote()">✕</button>
+            <div class="remote-title">🎮 Remote Control</div>
+            <div class="remote-buttons">
+              <button class="remote-btn" onclick="sendRemoteCommand('prev')">
+                ⏮️
+              </button>
+              <button class="remote-btn" onclick="sendRemoteCommand('play')">
+                ⏯️
+              </button>
+              <button class="remote-btn" onclick="sendRemoteCommand('next')">
+                ⏭️
+              </button>
+              <button class="remote-btn" onclick="sendRemoteCommand('voldown')">
+                🔇
+              </button>
+              <button class="remote-btn" onclick="sendRemoteCommand('mute')">
+                🔕
+              </button>
+              <button class="remote-btn" onclick="sendRemoteCommand('volup')">
+                🔊
+              </button>
+              <button
+                class="remote-btn"
+                onclick="sendRemoteCommand('fullscreen')"
+                style="grid-column: 1/2"
+              >
+                ⛶
+              </button>
+              <button
+                class="remote-btn"
+                onclick="closePlayer()"
+                style="grid-column: 2/4"
+              >
+                Close
+              </button>
+            </div>
+            <div id="deviceList" class="device-list"></div>
+          </div>
+
+          <div id="loading" class="loading">Loading channels...</div>
+
+          <div id="error" class="error" style="display: none">
+            Failed to load channels. Please try again later.
+          </div>
+
+          <!-- Favorites Section -->
+          <div id="favoritesSection" class="favorites-section" style="display: none">
+            <div class="favorites-title">
+              ⭐ Favorite Channels
+            </div>
+            <div class="favorites-grid"></div>
+          </div>
+
+          <div class="channels-grid" id="channelsGrid">
+            <!-- Channels will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <div class="sidebar">
+          <button class="intelligent-mode" id="intelligentModeBtn">
+            🤖 AI Intelligent Mode
+          </button>
+
+          <!-- TV Screen Programs Panel -->
+          <div class="tv-screen-programs" id="tvScreenPrograms">
+            <div class="tv-programs-header">
+              <span>📺 Current Channel Programs</span>
+              <button class="close-tv-programs" onclick="closeTvScreenPrograms()">✕</button>
+            </div>
+            <div id="tvProgramList"></div>
+          </div>
+
+          <!-- Program Guide Panel -->
+          <div class="program-guide" id="programGuide">
+            <div class="program-guide-header">📅 AI Program Guide</div>
+            <div id="programList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // IPTV Categories
+      const categories = {
+        news: "News",
+        entertainment: "Entertainment",
+        sports: "Sports",
+        movies: "Movies",
+        music: "Music",
+        kids: "Kids",
+        documentary: "Documentary",
+        education: "Education",
+        lifestyle: "Lifestyle",
+        cooking: "Cooking",
+        travel: "Travel",
+        animation: "Animation",
+        classic: "Classic",
+        comedy: "Comedy",
+        culture: "Culture",
+        general: "General",
+        outdoor: "Outdoor",
+        relax: "Relax",
+        religious: "Religious",
+        science: "Science",
+        series: "Series",
+        shop: "Shopping",
+        weather: "Weather",
+      };
+
+      let currentChannels = [];
+      let currentCategory = "news";
+      let activeChannel = null;
+      let hlsInstance = null;
+      let dashInstance = null;
+      let currentStreamCodec = null;
+      let castSession = null;
+      let favoriteChannels = [];
+      let intelligentMode = false;
+      let programReminders = [];
+
+      // ============ FAVORITES MANAGEMENT ============
+      const FavoritesManager = {
+        load: function() {
+          const stored = localStorage.getItem('tvFavorites');
+          return stored ? JSON.parse(stored) : [];
+        },
+        
+        save: function() {
+          localStorage.setItem('tvFavorites', JSON.stringify(favoriteChannels));
+        },
+        
+        add: function(channel) {
+          if (!favoriteChannels.find(fav => fav.url === channel.url)) {
+            favoriteChannels.push(channel);
+            this.save();
+            return true;
+          }
+          return false;
+        },
+        
+        remove: function(channelUrl) {
+          const index = favoriteChannels.findIndex(fav => fav.url === channelUrl);
+          if (index > -1) {
+            favoriteChannels.splice(index, 1);
+            this.save();
+            return true;
+          }
+          return false;
+        },
+        
+        isFavorite: function(channelUrl) {
+          return favoriteChannels.some(fav => fav.url === channelUrl);
+        }
+      };
+
+      // ============ TV SCREEN PROGRAMS ============
+      function showTvScreenPrograms() {
+        if (!activeChannel) {
+          alert('Please select a channel first');
+          return;
+        }
+        
+        const panel = document.getElementById('tvScreenPrograms');
+        panel.classList.add('active');
+        
+        // Load programs for current channel
+        loadCurrentChannelPrograms();
+      }
+      
+      function closeTvScreenPrograms() {
+        const panel = document.getElementById('tvScreenPrograms');
+        panel.classList.remove('active');
+      }
+      
+      async function loadCurrentChannelPrograms() {
+        const tvProgramList = document.getElementById('tvProgramList');
+        
+        // Check if we should use offline data
+        if (window.useOfflineData || !NetworkManager.isOnline || NetworkManager.lowDataMode) {
+          tvProgramList.innerHTML = '<div class="ai-loading"><div class="ai-loading-spinner"></div>Loading offline programs...</div>';
+          
+          // Use offline program data
+          setTimeout(() => {
+            const programs = OfflineProgramData.getProgramsForChannel(activeChannel.name, activeChannel.category || 'general');
+            displayCurrentChannelPrograms(programs);
+          }, 500);
+          return;
+        }
+        
+        tvProgramList.innerHTML = '<div class="ai-loading"><div class="ai-loading-spinner"></div>Loading real-time programs...</div>';
+        
+        try {
+          const programs = await EnhancedAI.generateRealTimePrograms(activeChannel.name, activeChannel.category || 'general');
+          displayCurrentChannelPrograms(programs);
+        } catch (error) {
+          console.error('Error loading current channel programs:', error);
+          // Fallback to offline data
+          const programs = OfflineProgramData.getProgramsForChannel(activeChannel.name, activeChannel.category || 'general');
+          displayCurrentChannelPrograms(programs);
+        }
+      }
+      
+      function displayCurrentChannelPrograms(programs) {
+        const tvProgramList = document.getElementById('tvProgramList');
+        tvProgramList.innerHTML = '';
+        
+        programs.forEach(program => {
+          const programItem = document.createElement('div');
+          programItem.className = 'program-item';
+          
+          // Add special styling for current and upcoming programs
+          if (program.isCurrent) {
+            programItem.style.borderLeft = '4px solid #dc2626';
+            programItem.style.background = 'linear-gradient(135deg, #fef2f2, #fee2e2)';
+          } else if (program.isUpcoming) {
+            programItem.style.borderLeft = '4px solid #10b981';
+            programItem.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
+          }
+          
+          const statusBadge = program.isCurrent ? '🔴 LIVE NOW' : program.isUpcoming ? '🟢 NEXT' : program.time;
+          const liveIndicator = program.isLive ? ' 📡' : '';
+          
+          programItem.innerHTML = `
+            <div class="program-time">${statusBadge} ${program.timeUntilStart}${liveIndicator}</div>
+            <div class="program-title">${program.title}</div>
+            <div class="program-description">${program.description}</div>
+            <div class="program-channel">${activeChannel.name} ${program.priority === 'high' ? '⭐' : ''}</div>
+            <div class="program-actions">
+              <button class="program-action-btn remind" onclick="setReminder('${program.title}', '${program.time}')">
+                🔔 Remind
+              </button>
+              <button class="program-action-btn share" onclick="shareProgram('${program.title}', '${activeChannel.name}', '${program.time}')">
+                📤 Share
+              </button>
+            </div>
+          `;
+          tvProgramList.appendChild(programItem);
+        });
+      }
+
+      // ============ NETWORK DETECTION & ADAPTIVE MODE ============
+      const NetworkManager = {
+        isOnline: navigator.onLine,
+        connectionType: 'unknown',
+        networkQuality: 'good',
+        lowDataMode: false,
+        
+        init() {
+          this.detectConnection();
+          this.setupEventListeners();
+          this.loadUserPreferences();
+        },
+        
+        detectConnection() {
+          // Detect connection type and quality
+          if ('connection' in navigator) {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+              this.connectionType = connection.effectiveType || 'unknown';
+              this.networkQuality = this.assessNetworkQuality(connection);
+              this.lowDataMode = this.shouldUseLowDataMode(connection);
+            }
+          }
+          
+          // Fallback detection
+          if (!this.isOnline) {
+            this.networkQuality = 'offline';
+            this.lowDataMode = true;
+          }
+        },
+        
+        assessNetworkQuality(connection) {
+          const effectiveType = connection.effectiveType || '4g';
+          const downlink = connection.downlink || 10;
+          const rtt = connection.rtt || 100;
+          
+          if (effectiveType === 'slow-2g' || effectiveType === '2g' || downlink < 0.1) {
+            return 'poor';
+          } else if (effectiveType === '3g' || downlink < 0.5) {
+            return 'fair';
+          } else if (effectiveType === '4g' || downlink > 2) {
+            return 'good';
+          }
+          return 'unknown';
+        },
+        
+        shouldUseLowDataMode(connection) {
+          const effectiveType = connection.effectiveType || '4g';
+          const saveData = connection.saveData || false;
+          
+          return saveData || 
+                 effectiveType === 'slow-2g' || 
+                 effectiveType === '2g' || 
+                 this.networkQuality === 'poor';
+        },
+        
+        setupEventListeners() {
+          window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.detectConnection();
+            this.showNetworkStatus('Connected', 'success');
+          });
+          
+          window.addEventListener('offline', () => {
+            this.isOnline = false;
+            this.networkQuality = 'offline';
+            this.lowDataMode = true;
+            this.showNetworkStatus('Offline - Using cached data', 'warning');
+          });
+          
+          if ('connection' in navigator) {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            connection.addEventListener('change', () => {
+              this.detectConnection();
+              this.adaptToNetworkConditions();
+            });
+          }
+        },
+        
+        loadUserPreferences() {
+          const savedMode = localStorage.getItem('lowDataMode');
+          if (savedMode !== null) {
+            this.lowDataMode = savedMode === 'true';
+          }
+        },
+        
+        toggleLowDataMode() {
+          this.lowDataMode = !this.lowDataMode;
+          localStorage.setItem('lowDataMode', this.lowDataMode.toString());
+          this.adaptToNetworkConditions();
+          this.showNetworkStatus(this.lowDataMode ? 'Low data mode enabled' : 'Full mode enabled', 'info');
+          
+          // Update toggle button text
+          const toggle = document.getElementById('lowDataToggle');
+          if (toggle) {
+            toggle.textContent = this.lowDataMode ? '📊 Low Data' : '📊 Full Mode';
+            toggle.classList.toggle('active', this.lowDataMode);
+          }
+        },
+        
+        adaptToNetworkConditions() {
+          // Adjust video quality based on network
+          this.adjustVideoQuality();
+          
+          // Adjust AI features based on network
+          this.adjustAIFeatures();
+          
+          // Update UI to reflect current mode
+          this.updateNetworkIndicator();
+        },
+        
+        adjustVideoQuality() {
+          const video = document.getElementById('videoPlayer');
+          if (!video) return;
+          
+          if (this.lowDataMode || this.networkQuality === 'poor') {
+            // Reduce video quality for low data mode
+            video.style.maxHeight = '300px';
+            // Could implement actual bitrate reduction here
+          } else {
+            video.style.maxHeight = '500px';
+          }
+        },
+        
+        adjustAIFeatures() {
+          // Disable AI features in low data mode or offline
+          if (!this.isOnline || this.lowDataMode) {
+            // Use offline program data instead of AI
+            window.useOfflineData = true;
+          } else {
+            window.useOfflineData = false;
+          }
+        },
+        
+        updateNetworkIndicator() {
+          const indicator = document.getElementById('networkIndicator');
+          if (indicator) {
+            indicator.className = `network-indicator ${this.networkQuality}`;
+            indicator.textContent = this.getNetworkStatusText();
+          }
+        },
+        
+        getNetworkStatusText() {
+          if (!this.isOnline) return '📴 Offline';
+          if (this.lowDataMode) return '📊 Low Data';
+          
+          const icons = {
+            'good': '📶 Good',
+            'fair': '📡 Fair', 
+            'poor': '📱 Poor',
+            'unknown': '❓ Unknown'
+          };
+          
+          return icons[this.networkQuality] || '📶 Good';
+        },
+        
+        showNetworkStatus(message, type) {
+          // Show temporary network status notification
+          const notification = document.createElement('div');
+          notification.className = `network-notification ${type}`;
+          notification.textContent = message;
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#2563eb'};
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 10000;
+            font-size: 14px;
+            font-weight: 500;
+          `;
+          
+          document.body.appendChild(notification);
+          setTimeout(() => notification.remove(), 3000);
+        }
+      };
+
+      // ============ OFFLINE PROGRAM DATA ============
+      const OfflineProgramData = {
+        programs: {
+          news: [
+            { time: "06:00", title: "Morning News Briefing", description: "Start your day with the latest headlines and updates", duration: 30 },
+            { time: "06:30", title: "Business Report", description: "Market news and business updates", duration: 30 },
+            { time: "07:00", title: "International News", description: "Global news and world events", duration: 60 },
+            { time: "08:00", title: "Local News", description: "Regional news and community updates", duration: 30 },
+            { time: "08:30", title: "Weather Update", description: "Latest weather forecast and conditions", duration: 15 },
+            { time: "09:00", title: "Talk Show", description: "Interviews and discussions", duration: 60 },
+            { time: "10:00", title: "Documentary", description: "In-depth documentary programming", duration: 60 },
+            { time: "11:00", title: "News Update", description: "Hourly news summary", duration: 30 },
+            { time: "12:00", title: "Midday News", description: "Comprehensive noon news coverage", duration: 60 },
+            { time: "13:00", title: "Afternoon Report", description: "Afternoon news and analysis", duration: 30 }
+          ],
+          sports: [
+            { time: "06:00", title: "Morning Sports Center", description: "Overnight sports results and morning highlights", duration: 60 },
+            { time: "07:00", title: "Fitness Show", description: "Morning exercise and fitness programming", duration: 30 },
+            { time: "08:00", title: "Sports Talk", description: "Sports discussion and analysis", duration: 60 },
+            { time: "09:00", title: "Classic Games", description: "Rebroadcast of classic sports matches", duration: 120 },
+            { time: "11:00", title: "Sports News", description: "Latest sports headlines and updates", duration: 30 },
+            { time: "12:00", title: "Live Event Preview", description: "Preview of upcoming live sports events", duration: 60 },
+            { time: "14:00", title: "Match Analysis", description: "Technical analysis of recent games", duration: 45 },
+            { time: "15:00", title: "Athletics Show", description: "Track and field and athletics coverage", duration: 60 },
+            { time: "16:00", title: "Extreme Sports", description: "Adventure and extreme sports programming", duration: 60 },
+            { time: "18:00", title: "Prime Time Sports", description: "Evening sports highlights and analysis", duration: 90 }
+          ],
+          entertainment: [
+            { time: "06:00", title: "Morning Show", description: "Light entertainment to start your day", duration: 60 },
+            { time: "07:00", title: "Cooking Show", description: "Cooking tips and recipes", duration: 30 },
+            { time: "08:00", title: "Talk Show", description: "Celebrity interviews and entertainment news", duration: 60 },
+            { time: "09:00", title: "Reality TV", description: "Popular reality television series", duration: 60 },
+            { time: "10:00", title: "Game Show", description: "Interactive game show with contestants", duration: 30 },
+            { time: "11:00", title: "Music Videos", description: "Latest music video hits", duration: 60 },
+            { time: "13:00", title: "Drama Series", description: "Popular drama series episode", duration: 60 },
+            { time: "14:00", title: "Comedy Show", description: "Stand-up comedy and sketches", duration: 30 },
+            { time: "15:00", title: "Lifestyle Program", description: "Home, garden and lifestyle tips", duration: 60 },
+            { time: "17:00", title: "Prime Time Preview", description: "Preview of evening programming", duration: 30 }
+          ],
+          documentary: [
+            { time: "06:00", title: "Nature Documentary", description: "Wildlife and nature programming", duration: 60 },
+            { time: "07:00", title: "Science Show", description: "Scientific discoveries and explanations", duration: 30 },
+            { time: "08:00", title: "History Program", description: "Historical documentaries and analysis", duration: 60 },
+            { time: "09:00", title: "Space Documentary", description: "Space exploration and astronomy", duration: 60 },
+            { time: "10:00", title: "Ocean Life", description: "Marine biology and ocean documentaries", duration: 60 },
+            { time: "12:00", title: "Technology Show", description: "Latest technology and innovations", duration: 30 },
+            { time: "13:00", title: "Archaeology", description: "Archaeological discoveries and research", duration: 60 },
+            { time: "14:00", title: "Environment", description: "Environmental issues and conservation", duration: 60 },
+            { time: "16:00", title: "Biography", description: "Biographical documentaries", duration: 60 },
+            { time: "18:00", title: "Current Affairs", description: "Contemporary issues and analysis", duration: 60 }
+          ]
+        },
+        
+        getProgramsForCategory(category) {
+          return this.programs[category] || this.programs.entertainment;
+        },
+        
+        getProgramsForChannel(channelName, category) {
+          const basePrograms = this.getProgramsForCategory(category);
+          const now = new Date();
+          
+          // Customize programs based on channel name
+          return basePrograms.map((program, index) => {
+            const adjustedProgram = { ...program };
+            
+            // Adjust titles based on channel characteristics
+            if (channelName.toLowerCase().includes('bbc')) {
+              adjustedProgram.title = `BBC ${program.title}`;
+            } else if (channelName.toLowerCase().includes('cnn')) {
+              adjustedProgram.title = `CNN ${program.title}`;
+            } else if (channelName.toLowerCase().includes('espn')) {
+              adjustedProgram.title = `ESPN ${program.title}`;
+            }
+            
+            return adjustedProgram;
+          });
+        }
+      };
+      const EnhancedAI = {
+        apiKey: 'AIzaSyD7q6byz_DxoP25mqOSX2pdptL5EmfMLVI',
+        
+        // Important channels with real-time data integration
+        importantChannels: {
+          news: ['CNN', 'BBC News', 'Fox News', 'MSNBC', 'Sky News', 'Al Jazeera', 'CNBC', 'Bloomberg'],
+          sports: ['ESPN', 'Sky Sports', 'Fox Sports', 'BT Sport', 'beIN Sports'],
+          entertainment: ['HBO', 'Netflix', 'Disney Channel', 'MTV', 'Comedy Central'],
+          documentary: ['National Geographic', 'Discovery Channel', 'History Channel', 'Science Channel']
+        },
+        
+        async generateRealTimePrograms(channelName, category) {
+          try {
+            const currentTime = new Date();
+            const timeString = currentTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              hour12: false 
+            });
+            
+            const isImportantChannel = this.isImportantChannel(channelName, category);
+            const prompt = this.generatePrompt(channelName, category, timeString, isImportantChannel);
+            
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: prompt
+                  }]
+                }]
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('AI API request failed');
+            }
+            
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (!text) {
+              throw new Error('No content from AI');
+            }
+            
+            // Extract JSON from response
+            const jsonMatch = text.match(/\[([\s\S]*?)\]/);
+            if (!jsonMatch) {
+              throw new Error('No valid JSON found');
+            }
+            
+            const programs = JSON.parse(jsonMatch[0]);
+            return this.processProgramsWithRealTime(programs, currentTime, isImportantChannel);
+            
+          } catch (error) {
+            console.error('Enhanced AI generation error:', error);
+            return this.getEnhancedFallbackPrograms(channelName, category);
+          }
+        },
+        
+        isImportantChannel(channelName, category) {
+          const importantList = this.importantChannels[category] || [];
+          return importantList.some(important => 
+            channelName.toLowerCase().includes(important.toLowerCase())
+          );
+        },
+        
+        generatePrompt(channelName, category, currentTime, isImportant) {
+          const basePrompt = `Generate realistic TV program schedules for ${channelName} (${category} channel) for the next 12 hours. Current time: ${currentTime}. 
+            
+            ${isImportant ? `This is a MAJOR channel - provide highly accurate, real-time programming with actual show names, live events, and breaking news patterns.` : `Provide standard programming patterns for this channel type.`}
+            
+            CRITICAL: Include current/ongoing program that should be airing right now at ${currentTime}.
+            
+            Return ONLY a JSON array with this exact format:
+            [
+              {
+                "time": "HH:MM",
+                "title": "Program Title",
+                "description": "Brief description (1-2 sentences)",
+                "duration": minutes,
+                "isLive": true/false,
+                "isCurrent": true/false
+              }
+            ]
+            
+            Requirements:
+            1. Mark the program airing at ${currentTime} with "isCurrent": true
+            2. Include live news, sports events, breaking stories for important channels
+            3. For sports channels: include live matches, scores, game times
+            4. For news channels: include breaking news, live reports, scheduled broadcasts
+            5. Start from current time and progress chronologically
+            6. Make it realistic and engaging for ${category} content`;
+            
+          return basePrompt;
+        },
+        
+        processProgramsWithRealTime(programs, currentTime, isImportant) {
+          return programs.map((program, index) => {
+            const programTime = new Date();
+            const [hours, minutes] = program.time.split(':');
+            programTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            const isCurrent = this.isCurrentProgram(programTime, currentTime);
+            const isUpcoming = programTime > currentTime && programTime.getTime() - currentTime.getTime() <= 60 * 60 * 1000; // Within 1 hour
+            
+            return {
+              ...program,
+              isCurrent,
+              isUpcoming,
+              status: isCurrent ? 'NOW' : isUpcoming ? 'NEXT' : 'LATER',
+              timeUntilStart: this.getTimeUntilStart(programTime, currentTime),
+              priority: isImportant ? 'high' : 'normal'
+            };
+          }).sort((a, b) => {
+            // Sort by priority and time
+            if (a.isCurrent !== b.isCurrent) return a.isCurrent ? -1 : 1;
+            if (a.isUpcoming !== b.isUpcoming) return a.isUpcoming ? -1 : 1;
+            return a.time.localeCompare(b.time);
+          });
+        },
+        
+        isCurrentProgram(programTime, currentTime) {
+          const programEnd = new Date(programTime.getTime() + (program.duration || 60) * 60 * 1000);
+          return currentTime >= programTime && currentTime <= programEnd;
+        },
+        
+        getTimeUntilStart(programTime, currentTime) {
+          const diff = programTime.getTime() - currentTime.getTime();
+          if (diff <= 0) return 'NOW';
+          
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          
+          if (hours > 0) return `in ${hours}h ${minutes}m`;
+          return `in ${minutes}m`;
+        },
+        
+        getEnhancedFallbackPrograms(channelName, category) {
+          const now = new Date();
+          const isImportant = this.isImportantChannel(channelName, category);
+          
+          const enhancedPrograms = {
+            news: [
+              { time: this.getCurrentTimeSlot(now, -30), title: "Breaking News Live", description: "Live coverage of breaking news events", duration: 30, isLive: true, isCurrent: true },
+              { time: this.getCurrentTimeSlot(now, 0), title: "Evening News Bulletin", description: "Comprehensive news update and analysis", duration: 60, isLive: false, isCurrent: false },
+              { time: this.getCurrentTimeSlot(now, 60), title: "World Report", description: "International news and global events", duration: 30, isLive: true, isCurrent: false },
+              { time: this.getCurrentTimeSlot(now, 90), title: "Business Tonight", description: "Market updates and financial news", duration: 60, isLive: false, isCurrent: false }
+            ],
+            sports: [
+              { time: this.getCurrentTimeSlot(now, -15), title: "Live Football Match", description: "Premier League: Live match coverage", duration: 120, isLive: true, isCurrent: true },
+              { time: this.getCurrentTimeSlot(now, 105), title: "Sports Center", description: "Latest sports news and highlights", duration: 60, isLive: true, isCurrent: false },
+              { time: this.getCurrentTimeSlot(now, 165), title: "Match Analysis", description: "Post-match analysis and commentary", duration: 45, isLive: false, isCurrent: false }
+            ],
+            entertainment: [
+              { time: this.getCurrentTimeSlot(now, 0), title: "Prime Time Show", description: "Popular entertainment series", duration: 60, isLive: false, isCurrent: false },
+              { time: this.getCurrentTimeSlot(now, 60), title: "Late Night Talk", description: "Celebrity interviews and comedy", duration: 45, isLive: false, isCurrent: false },
+              { time: this.getCurrentTimeSlot(now, 105), title: "Movie Premiere", description: "Exclusive movie presentation", duration: 120, isLive: false, isCurrent: false }
+            ]
+          };
+          
+          const programs = enhancedPrograms[category] || enhancedPrograms.entertainment;
+          return this.processProgramsWithRealTime(programs, now, isImportant);
+        },
+        
+        getCurrentTimeSlot(currentTime, minutesOffset) {
+          const slot = new Date(currentTime.getTime() + minutesOffset * 60 * 1000);
+          return slot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+      };
+
+      // ============ PROGRAM GUIDE & INTELLIGENT MODE ============
+      const ProgramGuide = {
+        currentPrograms: new Map(),
+        
+        async loadProgramsForChannels(channels) {
+          const programList = document.getElementById('programList');
+          
+          // Check if we should use offline data
+          if (window.useOfflineData || !NetworkManager.isOnline || NetworkManager.lowDataMode) {
+            programList.innerHTML = '<div class="ai-loading"><div class="ai-loading-spinner"></div>Loading offline schedules...</div>';
+            
+            // Use offline program data
+            setTimeout(() => {
+              const results = channels.slice(0, 5).map(channel => ({
+                channel,
+                programs: OfflineProgramData.getProgramsForChannel(channel.name, channel.category || 'general')
+              }));
+              this.displayChannelPrograms(results);
+            }, 500);
+            return;
+          }
+          
+          programList.innerHTML = '<div class="ai-loading"><div class="ai-loading-spinner"></div>Generating real-time schedules...</div>';
+          
+          try {
+            // Get top 5 channels from current category
+            const topChannels = channels.slice(0, 5);
+            const programPromises = topChannels.map(async (channel) => {
+              const programs = await EnhancedAI.generateRealTimePrograms(channel.name, channel.category || 'general');
+              return { channel, programs };
+            });
+            
+            const results = await Promise.all(programPromises);
+            this.displayChannelPrograms(results);
+            
+          } catch (error) {
+            console.error('Error loading programs:', error);
+            // Fallback to offline data
+            const results = channels.slice(0, 5).map(channel => ({
+              channel,
+              programs: OfflineProgramData.getProgramsForChannel(channel.name, channel.category || 'general')
+            }));
+            this.displayChannelPrograms(results);
+          }
+        },
+        
+        displayChannelPrograms(channelPrograms) {
+          const programList = document.getElementById('programList');
+          programList.innerHTML = '';
+          
+          channelPrograms.forEach(({ channel, programs }) => {
+            if (programs.length === 0) return;
+            
+            const channelSection = document.createElement('div');
+            channelSection.className = 'channel-programs';
+            
+            const header = document.createElement('div');
+            header.className = 'channel-programs-header';
+            header.innerHTML = `
+              <span>📺</span>
+              <span>${channel.name}</span>
+              <span style="font-size: 0.8rem; color: #666;">(${channel.category || 'General'})</span>
+            `;
+            channelSection.appendChild(header);
+            
+            programs.forEach(program => {
+              const programItem = document.createElement('div');
+              programItem.className = 'program-item';
+              
+              // Add special styling for current and upcoming programs
+              if (program.isCurrent) {
+                programItem.style.borderLeft = '4px solid #dc2626';
+                programItem.style.background = 'linear-gradient(135deg, #fef2f2, #fee2e2)';
+              } else if (program.isUpcoming) {
+                programItem.style.borderLeft = '4px solid #10b981';
+                programItem.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
+              }
+              
+              const statusBadge = program.isCurrent ? '🔴 LIVE NOW' : program.isUpcoming ? '🟢 NEXT' : program.time;
+              const liveIndicator = program.isLive ? ' 📡' : '';
+              
+              programItem.innerHTML = `
+                <div class="program-time">${statusBadge} ${program.timeUntilStart}${liveIndicator}</div>
+                <div class="program-title">${program.title}</div>
+                <div class="program-description">${program.description}</div>
+                <div class="program-channel">${channel.name} ${program.priority === 'high' ? '⭐' : ''}</div>
+                <div class="program-actions">
+                  <button class="program-action-btn remind" onclick="setReminder('${program.title}', '${program.time}')">
+                    🔔 Remind
+                  </button>
+                  <button class="program-action-btn share" onclick="shareProgram('${program.title}', '${channel.name}', '${program.time}')">
+                    📤 Share
+                  </button>
+                </div>
+              `;
+              channelSection.appendChild(programItem);
+            });
+            
+            programList.appendChild(channelSection);
+          });
+        }
+      };
+
+      // ============ REMINDERS & SHARING ============
+      function setReminder(title, time) {
+        const reminder = { title, time, id: Date.now() };
+        programReminders.push(reminder);
+        localStorage.setItem('tvReminders', JSON.stringify(programReminders));
+        
+        // Schedule notification
+        const [hours, minutes] = time.split(':');
+        const reminderTime = new Date();
+        reminderTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        if (reminderTime > new Date()) {
+          setTimeout(() => {
+            if (Notification.permission === 'granted') {
+              new Notification('TV Program Reminder', {
+                body: `${title} is starting now!`,
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4H9c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>'
+              });
+            }
+          }, reminderTime.getTime() - Date.now());
+        }
+        
+        alert(`Reminder set for ${title} at ${time}`);
+      }
+
+      function shareProgram(title, channel, time) {
+        const shareText = `📺 Watch "${title}" on ${channel} at ${time}!`;
+        
+        if (navigator.share) {
+          navigator.share({
+            title: 'TV Program',
+            text: shareText,
+            url: window.location.href
+          });
+        } else {
+          // Fallback: copy to clipboard
+          navigator.clipboard.writeText(shareText).then(() => {
+            alert('Program details copied to clipboard!');
+          });
+        }
+      }
+
+      function toggleIntelligentMode() {
+        intelligentMode = !intelligentMode;
+        const btn = document.getElementById('intelligentModeBtn');
+        const guide = document.getElementById('programGuide');
+        
+        btn.classList.toggle('active');
+        guide.classList.toggle('active');
+        
+        if (intelligentMode && currentChannels.length > 0) {
+          ProgramGuide.loadProgramsForChannels(currentChannels);
+          // Request notification permission
+          if (Notification.permission === 'default') {
+            Notification.requestPermission();
+          }
+        }
+      }
+
+      // ============ CODEC & FORMAT DETECTION ============
+      const CodecDetector = {
+        detect: function (url) {
+          const lower = url.toLowerCase();
+
+          if (lower.includes(".m3u8")) {
+            return {
+              type: "HLS",
+              codec: "H.264/AAC",
+              mimeType: "application/vnd.apple.mpegurl",
+            };
+          }
+          if (lower.includes(".mpd")) {
+            return {
+              type: "DASH",
+              codec: "VP9/H.265/H.264",
+              mimeType: "application/dash+xml",
+            };
+          }
+          if (lower.includes(".ts") || lower.includes("mpeg")) {
+            return {
+              type: "MPEG-TS",
+              codec: "MPEG2/H.264",
+              mimeType: "video/mp2t",
+            };
+          }
+          if (lower.includes(".mp4")) {
+            return { type: "MP4", codec: "H.264/H.265", mimeType: "video/mp4" };
+          }
+          if (lower.includes(".mkv")) {
+            return {
+              type: "Matroska",
+              codec: "VP9/H.265",
+              mimeType: "video/x-matroska",
+            };
+          }
+
+          return { type: "Unknown", codec: "Auto-detect", mimeType: "video/*" };
+        },
+
+        canPlay: function (mimeType) {
+          const video = document.createElement("video");
+          return video.canPlayType(mimeType) !== "";
+        },
+      };
+
+      // ============ CHROMECAST SUPPORT ============
+      const CastManager = {
+        init: function () {
+          const script = document.createElement("script");
+          script.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js";
+          script.onload = function () {
+            if (window.chrome && window.chrome.cast) {
+              window.chrome.cast.isAvailable = true;
+              CastManager.initializeCastApi();
+            }
+          };
+          document.head.appendChild(script);
+        },
+
+        initializeCastApi: function () {
+          const sessionRequest = new window.chrome.cast.SessionRequest(
+            window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          );
+
+          const apiConfig = new window.chrome.cast.ApiConfig(
+            sessionRequest,
+            CastManager.onSessionSuccess,
+            CastManager.onSessionError,
+            window.chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
+          );
+
+          window.chrome.cast.initialize(
+            apiConfig,
+            () => {
+              updateCastButton();
+            },
+            CastManager.onSessionError,
+          );
+        },
+
+        onSessionSuccess: function (session) {
+          castSession = session;
+          updateCastButton();
+          console.log(
+            "Connected to Chromecast device:",
+            session.receiver.label,
+          );
+
+          if (activeChannel) {
+            CastManager.castChannel(activeChannel);
+          }
+        },
+
+        onSessionError: function (error) {
+          console.log("Cast session error:", error);
+        },
+
+        castChannel: function (channel) {
+          if (!castSession) return;
+
+          const mediaRequest = new window.chrome.cast.media.MediaInfo(
+            channel.url,
+            CodecDetector.detect(channel.url).mimeType,
+          );
+
+          mediaRequest.metadata =
+            new window.chrome.cast.media.GenericMediaMetadata();
+          mediaRequest.metadata.title = channel.name;
+          mediaRequest.metadata.images = channel.logo
+            ? [{ url: channel.logo }]
+            : [];
+
+          castSession.loadMedia(
+            mediaRequest,
+            () => console.log("Media loaded on Chromecast"),
+            (err) => console.log("Error casting:", err),
+          );
+        },
+
+        stopCasting: function () {
+          if (castSession) {
+            castSession.stop(
+              () => (castSession = null),
+              (err) => console.log("Error stopping cast:", err),
+            );
+          }
+        },
+      };
+
+      // ============ REMOTE CONTROL ============
+      function toggleRemote() {
+        const panel = document.getElementById("remotePanel");
+        panel.classList.toggle("active");
+      }
+
+      function sendRemoteCommand(cmd) {
+        const video = document.getElementById("videoPlayer");
+
+        switch (cmd) {
+          case "play":
+            if (video.paused) video.play();
+            else video.pause();
+            break;
+          case "volup":
+            video.volume = Math.min(1, video.volume + 0.1);
+            document.getElementById("volumeSlider").value = video.volume;
+            updateVolumeIcon(video.volume);
+            break;
+          case "voldown":
+            video.volume = Math.max(0, video.volume - 0.1);
+            document.getElementById("volumeSlider").value = video.volume;
+            updateVolumeIcon(video.volume);
+            break;
+          case "mute":
+            video.muted = !video.muted;
+            updateVolumeIcon(video.volume);
+            break;
+          case "fullscreen":
+            toggleFullscreen();
+            break;
+          case "next":
+            playNextChannel();
+            break;
+          case "prev":
+            playPreviousChannel();
+            break;
+        }
+      }
+
+      // Keyboard shortcuts
+      function handleKeyPress(e) {
+        if (
+          !activeChannel ||
+          document.getElementById("videoContainer").style.display === "none"
+        )
+          return;
+
+        switch (e.key) {
+          case " ":
+            e.preventDefault();
+            sendRemoteCommand("play");
+            break;
+          case "m":
+            sendRemoteCommand("mute");
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            sendRemoteCommand("volup");
+            break;
+          case "ArrowDown":
+            e.preventDefault();
+            sendRemoteCommand("voldown");
+            break;
+          case "ArrowRight":
+            e.preventDefault();
+            sendRemoteCommand("next");
+            break;
+          case "ArrowLeft":
+            e.preventDefault();
+            sendRemoteCommand("prev");
+            break;
+          case "f":
+            sendRemoteCommand("fullscreen");
+            break;
+          case "r":
+            toggleRemote();
+            break;
+        }
+      }
+
+      function updateVolumeIcon(vol) {
+        const icon = document.getElementById("volumeIcon");
+        if (vol === 0 || document.getElementById("videoPlayer").muted) {
+          icon.textContent = "🔇";
+        } else if (vol < 0.5) {
+          icon.textContent = "🔈";
+        } else {
+          icon.textContent = "🔊";
+        }
+      }
+
+      function updateCastButton() {
+        const btn = document.getElementById("castBtn");
+        if (castSession) {
+          btn.style.background = "#2563eb";
+          btn.style.color = "white";
+          btn.textContent =
+            "📡 Connected: " + (castSession.receiver.label || "TV");
+        }
+      }
+
+      function playNextChannel() {
+        if (!activeChannel || !currentChannels.length) return;
+        const currentIdx = currentChannels.findIndex(
+          (ch) => ch.url === activeChannel.url,
+        );
+        if (currentIdx < currentChannels.length - 1) {
+          playChannel(currentChannels[currentIdx + 1], currentIdx + 1);
+        }
+      }
+
+      function playPreviousChannel() {
+        if (!activeChannel || !currentChannels.length) return;
+        const currentIdx = currentChannels.findIndex(
+          (ch) => ch.url === activeChannel.url,
+        );
+        if (currentIdx > 0) {
+          playChannel(currentChannels[currentIdx - 1], currentIdx - 1);
+        }
+      }
+
+      // Initialize the app
+      document.addEventListener("DOMContentLoaded", function () {
+        // Initialize network manager first
+        NetworkManager.init();
+        
+        initializeCategories();
+        loadChannels("news");
+        setupEventListeners();
+        CastManager.init();
+        
+        // Load favorites and reminders
+        favoriteChannels = FavoritesManager.load();
+        const storedReminders = localStorage.getItem('tvReminders');
+        if (storedReminders) {
+          programReminders = JSON.parse(storedReminders);
+        }
+        
+        displayFavorites();
+        
+        // Update network indicator
+        NetworkManager.updateNetworkIndicator();
+      });
+
+      function initializeCategories() {
+        const categoriesContainer = document.getElementById("categories");
+
+        Object.keys(categories).forEach((key) => {
+          const button = document.createElement("button");
+          button.className = "category-btn";
+          button.textContent = categories[key];
+          button.dataset.category = key;
+          button.addEventListener("click", () => selectCategory(key));
+          categoriesContainer.appendChild(button);
+        });
+
+        document
+          .querySelector(`[data-category="news"]`)
+          .classList.add("active");
+      }
+
+      function setupEventListeners() {
+        const searchInput = document.getElementById("searchInput");
+        searchInput.addEventListener("input", filterChannels);
+
+        document
+          .getElementById("closeBtn")
+          .addEventListener("click", closePlayer);
+        document
+          .getElementById("fullscreenBtn")
+          .addEventListener("click", toggleFullscreen);
+        document
+          .getElementById("prevBtn")
+          .addEventListener("click", playPreviousChannel);
+        document
+          .getElementById("nextBtn")
+          .addEventListener("click", playNextChannel);
+        document.getElementById("castBtn").addEventListener("click", () => {
+          if (window.chrome && window.chrome.cast) {
+            window.chrome.cast.requestSession(
+              CastManager.onSessionSuccess,
+              CastManager.onSessionError,
+            );
+          } else {
+            alert(
+              "Chromecast not supported in your browser. Use Chrome or Edge.",
+            );
+          }
+        });
+        document
+          .getElementById("remoteBtn")
+          .addEventListener("click", toggleRemote);
+        document.getElementById("codecBtn").addEventListener("click", () => {
+          if (currentStreamCodec) {
+            alert(
+              "Stream Info:\n" +
+                "Type: " +
+                currentStreamCodec.type +
+                "\n" +
+                "Codec: " +
+                currentStreamCodec.codec +
+                "\n" +
+                "MIME: " +
+                currentStreamCodec.mimeType,
+            );
+          }
+        });
+        
+        // Intelligent mode toggle
+        document.getElementById('intelligentModeBtn').addEventListener('click', toggleIntelligentMode);
+        
+        // TV screen click for programs
+        document.getElementById('videoPlayer').addEventListener('click', showTvScreenPrograms);
+
+        const volumeSlider = document.getElementById("volumeSlider");
+        volumeSlider.addEventListener("input", (e) => {
+          const video = document.getElementById("videoPlayer");
+          video.volume = e.target.value;
+          updateVolumeIcon(e.target.value);
+        });
+
+        document.addEventListener("keydown", handleKeyPress);
+      }
+
+      function selectCategory(category) {
+        currentCategory = category;
+
+        document.querySelectorAll(".category-btn").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        document
+          .querySelector(`[data-category="${category}"]`)
+          .classList.add("active");
+
+        document.getElementById("searchInput").value = "";
+        loadChannels(category);
+        
+        // Update program guide if intelligent mode is active
+        if (intelligentMode) {
+          ProgramGuide.loadProgramsForChannels(currentChannels);
+        }
+      }
+
+      async function loadChannels(category) {
+        const loading = document.getElementById("loading");
+        const error = document.getElementById("error");
+        const grid = document.getElementById("channelsGrid");
+
+        loading.style.display = "block";
+        error.style.display = "none";
+        grid.innerHTML = "";
+
+        try {
+          const response = await fetch(
+            `https://iptv-org.github.io/iptv/categories/${category}.m3u`,
+          );
+          if (!response.ok) throw new Error("Failed to fetch channels");
+
+          const m3uContent = await response.text();
+          currentChannels = parseM3U(m3uContent);
+
+          displayChannels(currentChannels);
+          
+          // Update program guide if intelligent mode is active
+          if (intelligentMode) {
+            ProgramGuide.loadProgramsForChannels(currentChannels);
+          }
+        } catch (err) {
+          console.error("Error loading channels:", err);
+          error.style.display = "block";
+        } finally {
+          loading.style.display = "none";
+        }
+      }
+
+      function parseM3U(content) {
+        const lines = content.split("\n");
+        const channels = [];
+        let currentChannel = null;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+
+          if (line.startsWith("#EXTINF:")) {
+            const nameMatch = line.match(/,(.+)$/);
+            const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+            const groupMatch = line.match(/group-title="([^"]*)"/);
+            const countryMatch = line.match(/tvg-country="([^"]*)"/);
+            const langMatch = line.match(/tvg-language="([^"]*)"/);
+
+            currentChannel = {
+              name: nameMatch ? nameMatch[1].trim() : "Unknown Channel",
+              logo: logoMatch ? logoMatch[1] : null,
+              category: groupMatch ? groupMatch[1] : "General",
+              country: countryMatch ? countryMatch[1] : null,
+              language: langMatch ? langMatch[1] : null,
+            };
+          } else if (
+            line.startsWith("http") &&
+            !line.startsWith("#") &&
+            currentChannel
+          ) {
+            channels.push({
+              ...currentChannel,
+              url: line,
+            });
+            currentChannel = null;
+          }
+        }
+
+        return channels;
+      }
+
+      function displayChannels(channels) {
+        const grid = document.getElementById("channelsGrid");
+        grid.innerHTML = "";
+
+        channels.forEach((channel, index) => {
+          const card = document.createElement("div");
+          card.className = "channel-card";
+          card.style.position = "relative";
+          card.onclick = () => playChannel(channel, index);
+
+          const codec = CodecDetector.detect(channel.url);
+          const isFav = FavoritesManager.isFavorite(channel.url);
+
+          card.innerHTML = `
+            <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, '${encodeURIComponent(JSON.stringify(channel))}')">
+              ${isFav ? '❤️' : '🤍'}
+            </button>
+            <div class="channel-logo">
+              ${channel.logo ? `<img src="${channel.logo}" alt="${channel.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ""}
+              <span style="display: ${channel.logo ? "none" : "block"};">📺</span>
+            </div>
+            <div class="channel-title">${channel.name}</div>
+            <div class="channel-category">${channel.category}</div>
+            <div class="codec-badge">${codec.type}</div>
+          `;
+
+          grid.appendChild(card);
+        });
+      }
+
+      function toggleFavorite(event, channelData) {
+        event.stopPropagation();
+        const channel = JSON.parse(decodeURIComponent(channelData));
+        
+        if (FavoritesManager.isFavorite(channel.url)) {
+          FavoritesManager.remove(channel.url);
+          event.target.textContent = '🤍';
+          event.target.classList.remove('active');
+        } else {
+          FavoritesManager.add(channel);
+          event.target.textContent = '❤️';
+          event.target.classList.add('active');
+        }
+        
+        displayFavorites();
+      }
+
+      function displayFavorites() {
+        const container = document.getElementById('favoritesSection');
+        if (!container) return;
+        
+        if (favoriteChannels.length === 0) {
+          container.style.display = 'none';
+          return;
+        }
+        
+        container.style.display = 'block';
+        const grid = container.querySelector('.favorites-grid');
+        grid.innerHTML = '';
+        
+        favoriteChannels.forEach(channel => {
+          const card = document.createElement('div');
+          card.className = 'channel-card';
+          card.style.position = 'relative';
+          card.onclick = () => {
+            const index = currentChannels.findIndex(ch => ch.url === channel.url);
+            playChannel(channel, index);
+          };
+          
+          const codec = CodecDetector.detect(channel.url);
+          
+          card.innerHTML = `
+            <button class="favorite-btn active" onclick="toggleFavorite(event, '${encodeURIComponent(JSON.stringify(channel))}')">
+              ❤️
+            </button>
+            <div class="channel-logo">
+              ${channel.logo ? `<img src="${channel.logo}" alt="${channel.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ""}
+              <span style="display: ${channel.logo ? "none" : "block"};">📺</span>
+            </div>
+            <div class="channel-title">${channel.name}</div>
+            <div class="channel-category">${channel.category}</div>
+            <div class="codec-badge">${codec.type}</div>
+          `;
+          
+          grid.appendChild(card);
+        });
+      }
+
+      function filterChannels() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const filteredChannels = currentChannels.filter(
+          (channel) =>
+            channel.name.toLowerCase().includes(query) ||
+            channel.category.toLowerCase().includes(query) ||
+            (channel.country && channel.country.toLowerCase().includes(query)),
+        );
+        displayChannels(filteredChannels);
+      }
+
+      function playChannel(channel, index) {
+        activeChannel = { ...channel, index };
+
+        document.querySelectorAll(".channel-card").forEach((card) => {
+          card.classList.remove("playing");
+        });
+        document
+          .querySelectorAll(".channel-card")
+          [index]?.classList.add("playing");
+
+        document.getElementById("videoContainer").style.display = "block";
+
+        document.getElementById("channelInfo").innerHTML = `
+                <div class="channel-name">${channel.name}</div>
+                <div class="channel-details">
+                    ${channel.category}
+                    ${channel.country ? ` • ${channel.country}` : ""}
+                    ${channel.language ? ` • ${channel.language}` : ""}
+                </div>
+            `;
+
+        // Cast if connected
+        if (castSession) {
+          CastManager.castChannel(channel);
+        }
+
+        loadVideo(channel.url);
+        
+        // Update TV screen programs if panel is open
+        if (document.getElementById('tvScreenPrograms').classList.contains('active')) {
+          loadCurrentChannelPrograms();
+        }
+
+        document.getElementById("videoContainer").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      async function loadVideo(url) {
+        const video = document.getElementById("videoPlayer");
+        const codec = CodecDetector.detect(url);
+        currentStreamCodec = codec;
+
+        document.getElementById("qualityInfo").textContent =
+          `${codec.type} • ${codec.codec}`;
+
+        if (hlsInstance) {
+          hlsInstance.destroy();
+          hlsInstance = null;
+        }
+        if (dashInstance) {
+          dashInstance.destroy();
+          dashInstance = null;
+        }
+
+        video.pause();
+        video.currentTime = 0;
+
+        // Try HLS with HLS.js
+        if (codec.type === "HLS" && window.Hls && window.Hls.isSupported()) {
+          hlsInstance = new window.Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            maxBufferSize: 30 * 1000 * 1000,
+            maxBufferLength: 30,
+          });
+
+          hlsInstance.loadSource(url);
+          hlsInstance.attachMedia(video);
+
+          hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch((err) => console.log("Autoplay prevented"));
+          });
+
+          hlsInstance.on(window.Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              console.error("HLS Error:", data);
+              // Fallback to native
+              video.src = url;
+              video.load();
+              video.play().catch((err) => console.log("Fallback play failed"));
+            }
+          });
+        }
+        // Try DASH with dash.js
+        else if (codec.type === "DASH" && window.dashjs) {
+          dashInstance = window.dashjs.MediaPlayer().create();
+          dashInstance.initialize(video, url, true);
+          dashInstance.attachView(video);
+          video.play().catch((err) => console.log("Autoplay prevented"));
+        }
+        // Direct playback with type hints
+        else {
+          video.type = codec.mimeType;
+          video.src = url;
+          video.load();
+          video.play().catch((err) => console.log("Autoplay prevented"));
+        }
+      }
+
+      function closePlayer() {
+        const video = document.getElementById("videoPlayer");
+        const container = document.getElementById("videoContainer");
+
+        video.pause();
+        video.currentTime = 0;
+
+        if (hlsInstance) {
+          hlsInstance.destroy();
+          hlsInstance = null;
+        }
+        if (dashInstance) {
+          dashInstance.destroy();
+          dashInstance = null;
+        }
+
+        container.style.display = "none";
+        activeChannel = null;
+
+        document.querySelectorAll(".channel-card").forEach((card) => {
+          card.classList.remove("playing");
+        });
+      }
+
+      function toggleFullscreen() {
+        const video = document.getElementById("videoPlayer");
+
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else if (video.requestFullscreen) {
+          video.requestFullscreen();
+        }
+      }
+
+      // Load HLS.js and dash.js dynamically
+      (function () {
+        if (typeof window.Hls === "undefined") {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+          document.head.appendChild(script);
+        }
+
+        if (typeof window.dashjs === "undefined") {
+          const script = document.createElement("script");
+          script.src = "https://cdn.dashjs.org/latest/dash.all.min.js";
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+  </body>
+</html>
