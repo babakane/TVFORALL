@@ -7,14 +7,17 @@ import { VideoPlayer } from "./video-player";
 import { ChannelGrid } from "./channel-grid";
 import { Menu, Trash2 } from "lucide-react";
 import type { Channel, CategoryKey } from "@/lib/channels";
+import { IPTV_CATEGORIES, parseM3U } from "@/lib/channels";
 import { useFavorites, useRecentChannels } from "@/hooks/use-tv-storage";
 
 const fetcher = async (category: string): Promise<Channel[]> => {
   try {
-    const response = await fetch(`/api/channels?category=${category}`);
+    const url = IPTV_CATEGORIES[category as CategoryKey];
+    if (!url) throw new Error("Invalid category");
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch");
-    const data = await response.json();
-    return data;
+    const text = await response.text();
+    return parseM3U(text);
   } catch {
     return [];
   }
